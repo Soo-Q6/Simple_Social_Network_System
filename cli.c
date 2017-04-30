@@ -15,21 +15,13 @@ void cli_download(const char* filename, int sockfd) {
 
 	char recvline[MAXLINE];
 	int n;
-	// FILE* fp = fopen(filename, "w");
-	// if (fp == NULL)
-	// {
-	// 	printf("open file error\n");
-	// 	exit(0);
-	// }
 again:
 	while ((n = read(sockfd, recvline, MAXLINE)) == MAXLINE)
 	{
 		fputs(recvline, stdout);
-		//fwrite(recvline, 1, n, fp);
 	}
 	if (n>1)
 	{
-		//fputs(recvline, stdout);
 		if (strcmp(recvline, "error") == 0)
 		{
 			printf("no such file!\n");
@@ -38,7 +30,6 @@ again:
 		}
 		else
 			fputs(recvline, stdout);
-			//fwrite(recvline, 1, n, fp);
 
 	}
 	if (n < 0 && errno == EINTR)
@@ -46,8 +37,7 @@ again:
 	else if (n < 0)
 		printf("show error");
 	else
-		printf("Show Complete!\n");
-	//fclose(fp);
+		printf("\nShow Complete!\n");
 	return;
 }
 
@@ -122,4 +112,22 @@ void cli_cmd_Up(int sockfd, char str[10], char strname[20]) {
 	{
 		printf("error\n");
 	}
+}
+
+void cli_list(int sockfd){
+	char recvline[100] = { '\0' };
+	int n = 100;
+	for (; n == 100;)
+	{
+		n = read(sockfd, recvline, 100);
+		if (n == 100)
+		{
+			printf("%s\n", recvline);
+		}
+		else
+		{
+			printf("\n");
+		}
+	}
+	return;	
 }

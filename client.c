@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
 		}
 		else if(strcmp(str,"list")==0)
 		{
-			list(sockfd);
+			cli_list(sockfd);
 		}
 		else
 		{

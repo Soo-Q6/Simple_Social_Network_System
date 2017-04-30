@@ -49,5 +49,11 @@ if a commander need a object to handle
 include cd, download, upload, mkdir
 */
 void ser_cmd_Up(int connfd, char str[10], char strname[20], struct Login_info logininfo);
+/**
+@server
+show the on-line user
+*/
+void ser_list(int connfd,struct Login_info* logininfo);
+
 #endif // !SERVER_H
 

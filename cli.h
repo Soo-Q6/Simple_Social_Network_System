@@ -34,7 +34,7 @@ void cli_cmd_Up(int sockfd, char str[10], char strname[20]);
 @client
 show the on-line user
 */
-void list(int sockfd);
+void cli_list(int sockfd);
 
 #endif // !CLIENT_H
 

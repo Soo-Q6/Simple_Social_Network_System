@@ -146,3 +146,20 @@ void ser_sig_chid(int signo) {
 	return;
 }
 
+void ser_list(int sockfd,struct Login_info *logininfo){
+	char sendline[100]={'\0'};
+	char tmp[7]={'\0'};
+	int i1;
+	for (i1 = 0; i1 < FD_SETSIZE; i1++)
+				if (logininfo[i1].client > 0) {
+					strcat(sendline,logininfo[i1].account);
+					strcat(sendline,"  ip:");
+					strcat(sendline,logininfo[i1].sin_addr);
+					strcat(sendline,"  port:");
+					sprintf(tmp,"%d",logininfo[i1].sin_port);
+					strcat(sendline,tmp);
+					write(sockfd,sendline,sizeof(sendline));
+					bzero(sendline,strlen(sendline));
+				}
+				write(sockfd,sendline,1);
+}

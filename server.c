@@ -108,6 +108,10 @@ int main(int argc, char **argv)
 					{
 						ser_ls(tmp, sockfd);
 					}
+					else if(strcmp(str,"list")==0)
+					{
+						ser_list(sockfd,LoginInfo);
+					}
 					else if (strcmp(str, "exit") == 0)
 					{
 						printf("disconnection form:%s  port:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
