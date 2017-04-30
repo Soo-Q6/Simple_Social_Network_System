@@ -10,18 +10,7 @@
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
 #include "ser.h"
 
-#define SERV_PORT 8888
-//#define MAXLINE 1024
-#define LISTENQ 1024
-#define ACCOUNT_SIZE 20
-#define SA struct sockaddr
-#define max(a,b)  ((a)>(b)?(a):(b))
-struct Login_info {
-	int client;
-	char account[ACCOUNT_SIZE];
-	char *sin_addr;
-	int sin_port;
-};
+
 int main(int argc, char **argv)
 {
 	int					i, maxi, maxfd, listenfd, connfd, sockfd;
@@ -53,7 +42,6 @@ int main(int argc, char **argv)
 	FD_SET(listenfd, &allset);
 	/* end fig01 */
     
-    ser_changedir(path);
 	/* include fig02 */
 	for (; ; ) {
 		rset = allset;		/* structure assignment */
@@ -110,11 +98,15 @@ int main(int argc, char **argv)
                 printf("this%d\n",i);
 					char str[10] = { '\0' };
 					char strname[20] = { '\0' };
+					int n;
+					char tmp[PATH_LENGTH];
+					n = chdir(path);
+					getcwd(tmp, PATH_LENGTH);
 					recv(sockfd, str, 10, 0);         //获取指令 done.
                     printf("str:%s\n",str);
 					if (strcmp(str, "ls") == 0)
 					{
-						ser_ls(path, sockfd);
+						ser_ls(tmp, sockfd);
 					}
 					else if (strcmp(str, "exit") == 0)
 					{
@@ -123,13 +115,13 @@ int main(int argc, char **argv)
                         FD_CLR(sockfd,&allset);
                         LoginInfo[i].client=-1;
 						exit(0);
-						break;
+						//break;
 					}
 					else if (ser_Iscmd(str))
 					{
 						recv(sockfd, strname, 20, 0);
                         printf("strname:%s\n",strname);
-						ser_cmd_Up(sockfd, str, strname, path);
+						ser_cmd_Up(sockfd, str, strname, LoginInfo[i]);
 					}
 					else
 					{

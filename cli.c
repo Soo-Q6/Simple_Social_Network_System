@@ -15,17 +15,17 @@ void cli_download(const char* filename, int sockfd) {
 
 	char recvline[MAXLINE];
 	int n;
-	FILE* fp = fopen(filename, "w");
-	if (fp == NULL)
-	{
-		printf("open file error\n");
-		exit(0);
-	}
+	// FILE* fp = fopen(filename, "w");
+	// if (fp == NULL)
+	// {
+	// 	printf("open file error\n");
+	// 	exit(0);
+	// }
 again:
 	while ((n = read(sockfd, recvline, MAXLINE)) == MAXLINE)
 	{
-		//fputs(recvline, stdout);
-		fwrite(recvline, 1, n, fp);
+		fputs(recvline, stdout);
+		//fwrite(recvline, 1, n, fp);
 	}
 	if (n>1)
 	{
@@ -37,48 +37,31 @@ again:
 			return;
 		}
 		else
-			fwrite(recvline, 1, n, fp);
+			fputs(recvline, stdout);
+			//fwrite(recvline, 1, n, fp);
+
 	}
 	if (n < 0 && errno == EINTR)
 		goto again;
 	else if (n < 0)
-		printf("read error");
+		printf("show error");
 	else
-		printf("Download Complete!\n");
-	fclose(fp);
+		printf("Show Complete!\n");
+	//fclose(fp);
 	return;
 }
 
 
 
 void cli_upload(const char* filename, int sockfd) {
-	FILE *fp;
 	ssize_t n;
 	char buf[MAXLINE];
 	const char error[6] = "error";
-	if ((fp = fopen(filename, "r")) == NULL) {
-		printf("cannot open file!\n");
-		write(sockfd, error, sizeof(error));
-		return;
-		//exit(0);
-	}
 	printf("inputing:\n");
-again:
-	while (fread(buf, 1, MAXLINE, fp)) {
-		printf("%s buf\n",buf);
-		printf("the strlen:%d\n",strlen(buf));
-		n = write(sockfd, buf, strlen(buf));
-		printf("this is the write number:%d",n);
-	}
-	if (n < 0 && errno == EINTR)
-		goto again;
-	else if (n < 0)
-		printf("read error");
-	else
-		printf("Upload Complete!\n");
-	write(sockfd, buf, 1);
-	printf("the end\n");	
-	//fclose(fp);
+	n=fread(buf,1,MAXLINE,stdin);
+	buf[n]='\0';
+	printf("%s\n",buf);
+	write(sockfd, buf, strlen(buf));	
 	return;
 }
 
@@ -106,14 +89,14 @@ void cli_ls(int sockfd) {
 }
 
 int cli_Iscmd(char cmd[10]) {
-	if (!strcmp(cmd, "cd") || !strcmp(cmd, "mkdir") || !strcmp(cmd, "download") || !strcmp(cmd, "upload"))
+	if (!strcmp(cmd, "cd") || !strcmp(cmd, "mkdir") || !strcmp(cmd, "show") || !strcmp(cmd, "po"))
 		return 1;
 	else
 		return 0;
 }
 
 void cli_cmd_Up(int sockfd, char str[10], char strname[20]) {
-	if (strcmp(str, "download") == 0)
+	if (strcmp(str, "show") == 0)
 	{
 		printf("%s %s\n", str, strname);
 		send(sockfd, strname, 20, 0);
@@ -121,7 +104,7 @@ void cli_cmd_Up(int sockfd, char str[10], char strname[20]) {
 		return;
 
 	}
-	else if (strcmp(str, "upload") == 0)
+	else if (strcmp(str, "po") == 0)
 	{
 		printf("%s %s\n", str, strname);
 		send(sockfd, strname, 20, 0);

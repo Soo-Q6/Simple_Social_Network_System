@@ -62,6 +62,10 @@ int main(int argc, char **argv) {
 		{
 			exit(0);
 		}
+		else if(strcmp(str,"list")==0)
+		{
+			list(sockfd);
+		}
 		else
 		{
 			printf("commander wrong!\n");

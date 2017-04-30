@@ -29,20 +29,18 @@ void ser_download(const char* filename, int sockfd) {
 again:
 	while ((n = fread(buf, 1, MAXLINE, fp)) > 0) {
 		write(sockfd, buf, n);
-		//printf("the fread count:%d\n", n);
 	}
 	if (n < 0 && errno == EINTR)
 		goto again;
 	else if (n < 0)
 		printf("str_echo:read error");
-	//printf("done!\n"); 
 	write(sockfd, buf, 1);
 	fclose(fp);
 	return;
 }
 
 
-void ser_upload(const char* filename, int sockfd) {
+void ser_upload(const char* filename, int sockfd, struct Login_info logininfo) {
 	char recvline[MAXLINE];
 	FILE* fp = fopen(filename, "w");
 	ssize_t n;
@@ -51,6 +49,7 @@ void ser_upload(const char* filename, int sockfd) {
 		printf("open file error\n");
 		exit(0);
 	}
+	fprintf(fp,"account:%s\taddr:%s\tport:%d",logininfo.account,logininfo.sin_addr,logininfo.sin_port);
 again:
 	if ((n = read(sockfd, recvline, MAXLINE)) == MAXLINE)
 	{
@@ -78,11 +77,11 @@ again:
 
 
 
-void ser_ls(char* path, int connfd) {
+void ser_ls(char* tmp, int connfd) {
 	struct dirent* ent = NULL;
 	DIR *pDir;
 	char sendline[100] = { '\0' };
-	while ((pDir = opendir(path)) == NULL)
+	while ((pDir = opendir(tmp)) == NULL)
 	{
 		printf("cannot open direactory.");
 		write(connfd, sendline, 2);
@@ -91,6 +90,9 @@ void ser_ls(char* path, int connfd) {
 	while ((ent = readdir(pDir)) != NULL)
 	{
 		strcpy(sendline, ent->d_name);
+		if(strcmp(sendline,".")==0||strcmp(sendline,"..")==0){
+			continue;
+		}
 		if (write(connfd, sendline, sizeof(sendline)) < 0)
 		{
 			printf("write error: %s (errno:%d)", strerror(errno), errno);
@@ -104,38 +106,23 @@ void ser_ls(char* path, int connfd) {
 
 int ser_Iscmd(char cmd[10])
 {
-	if (!strcmp(cmd, "cd") || !strcmp(cmd, "mkdir") || !strcmp(cmd, "download") || !strcmp(cmd, "upload"))
+	if (!strcmp(cmd, "cd") || !strcmp(cmd, "mkdir") || !strcmp(cmd, "show") || !strcmp(cmd, "po"))
 		return 1;
 	else
 		return 0;
 }
 
-void ser_cmd_Up(int connfd, char str[10], char strname[20], char* path) {
-	if (strcmp(str, "cd") == 0) {
-		char path_tmp[PATH_LENGTH];
-		strcpy(path_tmp, ser_changedir(strname));
-		printf("%s\n", path_tmp);
-		if (strcmp(path_tmp, "error") == 0) {
-			write(connfd, path_tmp, 1);
-		}
-		else {
-			strcpy(path, path_tmp);
-			printf("the new path is %s %lu\n", path, strlen(path));
-			int n = write(connfd, path, strlen(path));
-			printf("the writing length is :%d\n", n);
-		}
-		return;
-	}
-	else if (strcmp(str, "download") == 0)
+void ser_cmd_Up(int connfd, char str[10], char strname[20], struct Login_info logininfo) {
+	if (strcmp(str, "show") == 0)
 	{
 		printf("%s %s\n", str, strname);
 		ser_download(strname, connfd);
 		return;
 
 	}
-	else if (strcmp(str, "upload") == 0)
+	else if (strcmp(str, "po") == 0)
 	{
-		ser_upload(strname, connfd);
+		ser_upload(strname, connfd, logininfo);
 		return;
 	}
 	else if (strcmp(str, "mkdir") == 0)
@@ -159,16 +146,3 @@ void ser_sig_chid(int signo) {
 	return;
 }
 
-
-char* ser_changedir(const char* strname) {
-	int n;
-	char path[PATH_LENGTH];
-	n = chdir(strname);
-	if (n != 0)
-	{
-		printf("change dir error: %s (errno:%d)\n", strerror(errno), errno);
-		return "error";
-	}
-	getcwd(path, PATH_LENGTH);
-	return path;
-}

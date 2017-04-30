@@ -30,6 +30,11 @@ if a commander need a object to handle
 include cd, download, upload, mkdir
 */
 void cli_cmd_Up(int sockfd, char str[10], char strname[20]);
+/**
+@client
+show the on-line user
+*/
+void list(int sockfd);
 
 #endif // !CLIENT_H
 
