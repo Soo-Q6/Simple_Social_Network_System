@@ -13,7 +13,7 @@
 
 int main(int argc, char **argv)
 {
-	int					i, maxi, maxfd, listenfd, connfd, sockfd;
+	int					i, maxi, maxfd, listenfd, connfd, sockfd, udpfd;
 	int					nready;
 	struct Login_info   LoginInfo[FD_SETSIZE];
 	ssize_t				n;
@@ -33,6 +33,14 @@ int main(int argc, char **argv)
 	bind(listenfd, (SA *)&servaddr, sizeof(servaddr));
 
 	listen(listenfd, LISTENQ);
+
+	/* for create UDP socket */
+    udpfd = socket(AF_INET, SOCK_DGRAM, 0);
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port = htons(SERV_PORT);
+    //bind(udpfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
 	maxfd = listenfd;			/* initialize */
 	maxi = -1;					/* index into client[] array */
@@ -107,6 +115,9 @@ int main(int argc, char **argv)
 					if (strcmp(str, "ls") == 0)
 					{
 						ser_ls(tmp, sockfd);
+					}
+					else if(strcmp(str,"broadcast")==0){
+						ser_broadcast(sockfd,udpfd);
 					}
 					else if(strcmp(str,"list")==0)
 					{

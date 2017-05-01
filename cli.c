@@ -43,7 +43,7 @@ again:
 
 
 
-void cli_upload(const char* filename, int sockfd) {
+void cli_upload(int sockfd) {
 	ssize_t n;
 	char buf[MAXLINE];
 	const char error[6] = "error";
@@ -98,7 +98,7 @@ void cli_cmd_Up(int sockfd, char str[10], char strname[20]) {
 	{
 		printf("%s %s\n", str, strname);
 		send(sockfd, strname, 20, 0);
-		cli_upload(strname, sockfd);
+		cli_upload(sockfd);
 		return;
 	}
 	else if (strcmp(str, "mkdir") == 0)
@@ -130,4 +130,23 @@ void cli_list(int sockfd){
 		}
 	}
 	return;	
+}
+
+void str_echo(int sockfd) {
+	ssize_t n;
+	char buf[MAXLINE];
+	struct sockaddr_in clientaddr;
+	socklen_t clientLen = sizeof(clientaddr);
+	getpeername(sockfd, (struct sockaddr*)&clientaddr, &clientLen);
+	printf("connection form:%s  port:%d\n", inet_ntoa(clientaddr.sin_addr), ntohs(clientaddr.sin_port));
+again:
+	while ((n = read(sockfd, buf, MAXLINE)) > 0) {
+		buf[n] = '\0';
+		write(sockfd, buf, n);
+
+	}
+	if (n < 0 && errno == EINTR)
+		goto again;
+	else if (n < 0)
+		printf("str_echo:read error");
 }

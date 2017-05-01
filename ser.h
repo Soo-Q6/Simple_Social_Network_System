@@ -54,6 +54,11 @@ void ser_cmd_Up(int connfd, char str[10], char strname[20], struct Login_info lo
 show the on-line user
 */
 void ser_list(int connfd,struct Login_info* logininfo);
+/**
+@server
+broadcast the message to all the online user.
+*/
+void ser_broadcast(int connfd,int udpfd);
 
 #endif // !SERVER_H
 

@@ -17,10 +17,11 @@
 #define ACCOUNT_SIZE 20
 void str_cli(FILE *, int);
 int main(int argc, char **argv) {
-	int sockfd, n = 1;
+	int sockfd, udpfd, maxfd, n = 1, nready, len, connfd;
 	char recvline[MAXLINE], sendline[MAXLINE];
 	char account[ACCOUNT_SIZE];
 	struct sockaddr_in servaddr;
+	fd_set rset;
 	time_t ticks;
 	char str[10], str_name[20];
 	char *ipaddr = "127.0.0.1";
@@ -41,6 +42,56 @@ int main(int argc, char **argv) {
 	printf("%s login successfully!\n", account);
 
 
+	/* for create UDP socket */
+    udpfd = socket(AF_INET, SOCK_DGRAM, 0);
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port = htons(SERV_PORT);
+    bind(udpfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+
+	FD_ZERO(&rset);
+	maxfd=max(udpfd,max(sockfd,fileno(stdin)));
+
+	for (;;)
+    {
+	FD_SET(fileno(stdin),&rset);
+	FD_SET(sockfd, &rset);
+	FD_SET(udpfd, &rset);
+	if ((nready = select(maxfd+1, &rset, NULL, NULL, NULL)) < 0)
+	{
+	    if (errno == EINTR)
+		continue;
+	    /* back to for() */
+	    else
+		printf("select error");
+	}
+	if (FD_ISSET(sockfd, &rset))
+	{
+	    len = sizeof(servaddr);
+	    connfd = accept(sockfd, (struct sockaddr *)&servaddr, &len);
+	    //if ((childpid = fork()) == 0)
+	    //{
+		/* child process */
+		//close(listenfd);
+		/* close listening socket */
+		str_echo(connfd);
+		/* process the request */
+		//exit(0);
+	    //}
+	    close(connfd);
+	}
+	if (FD_ISSET(udpfd, &rset))
+	{
+		char mesg[MAXLINE];
+	    len = sizeof(servaddr);
+	    n = recvfrom(udpfd, mesg, MAXLINE, 0, NULL, NULL);
+		printf("broadcast:\n%s\n",mesg);
+	    //sendto(udpfd, mesg, n, 0, (struct sockaddr *)&cliaddr, len);
+	}
+	if(FD_ISSET(fileno(stdin),&rset)){
+		char a[10];
+		scanf("%s",a);
 	while (1)
 	{
 		printf("%s/>", "cmd");
@@ -51,10 +102,17 @@ int main(int argc, char **argv) {
 		send(sockfd, str, 10, 0);           //传指令 done.
 		if (strcmp(str, "ls") == 0)
 		{
+			printf("this is ls\n");
 			cli_ls(sockfd);
+		}
+		else if(strcmp(str,"broadcast")==0)
+		{
+			printf("this is broadcast\n");
+			cli_upload(sockfd);
 		}
 		else if (cli_Iscmd(str))
 		{
+			printf("this is multiple select.\n");
 			scanf("%s", strname);
 			cli_cmd_Up(sockfd, str, strname);
 		}
@@ -64,6 +122,7 @@ int main(int argc, char **argv) {
 		}
 		else if(strcmp(str,"list")==0)
 		{
+			printf("this is list\n");
 			cli_list(sockfd);
 		}
 		else
@@ -72,5 +131,10 @@ int main(int argc, char **argv) {
 		}
 	}
 	return 0;
-
+	}
+    }
 }
+
+
+
+

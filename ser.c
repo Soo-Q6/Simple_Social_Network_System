@@ -163,3 +163,46 @@ void ser_list(int sockfd,struct Login_info *logininfo){
 				}
 				write(sockfd,sendline,1);
 }
+
+
+void ser_broadcast(int sockfd, int udpfd) {
+	char recvline[MAXLINE];
+	ssize_t n;
+	struct sockaddr_in addrto;
+    bzero(&addrto,sizeof(struct sockaddr_in));
+  	addrto.sin_family=AF_INET;
+    addrto.sin_addr.s_addr=htonl(INADDR_BROADCAST);
+    addrto.sin_port=htons(6000);
+    int nlen=sizeof(addrto);
+	printf("this is broadcasting\n");
+again:
+	if ((n = read(sockfd, recvline, MAXLINE)) == MAXLINE)
+	{
+		//fwrite(recvline, 1, n, fp);
+		printf("broadcasting context:%s\n",recvline);
+		if(sendto(udpfd, recvline, MAXLINE, 0, (struct sockaddr *)&addrto, nlen)>0){
+			printf("broadcast successfully\n");
+		}
+	}
+	if (n>1)
+	{
+		if (strcmp(recvline, "error") == 0)
+		{
+			return;
+		}
+		else{
+			if(sendto(udpfd, recvline, MAXLINE, 0, (struct sockaddr *)&addrto, nlen)>0){
+				printf("broadcast successfully\n");
+			}
+			printf("broadcasting context:%s\n",recvline);
+		}
+	}
+	if (n < 0 && errno == EINTR)
+		goto again;
+	else if (n <= 0)
+		printf("read error");
+	else
+		printf("Upload Complete!\n");
+	//fclose(fp);
+	return;
+}

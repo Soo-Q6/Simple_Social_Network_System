@@ -2,11 +2,13 @@
 #define CLIENT_H
 
 #define MAXLINE 1024
+#define max(a,b)  ((a)>(b)?(a):(b))
+
 /**
 @client
 select a file and send it to the socket
 */
-void cli_upload(const char*fp, int sockfd);
+void cli_upload(int sockfd);
 /**
 @client
 download a file from server
@@ -35,6 +37,6 @@ void cli_cmd_Up(int sockfd, char str[10], char strname[20]);
 show the on-line user
 */
 void cli_list(int sockfd);
-
+void str_echo(int sockfd);
 #endif // !CLIENT_H
 
