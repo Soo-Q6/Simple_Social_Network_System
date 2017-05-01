@@ -36,10 +36,11 @@ int main(int argc, char **argv)
 
 	/* for create UDP socket */
     udpfd = socket(AF_INET, SOCK_DGRAM, 0);
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(SERV_PORT);
+    //bzero(&servaddr, sizeof(servaddr));
+    //servaddr.sin_family = AF_INET;
+    //servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    //servaddr.sin_port = htons(UDP_PORT);
+	//inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
     //bind(udpfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
 	maxfd = listenfd;			/* initialize */
@@ -126,10 +127,10 @@ int main(int argc, char **argv)
 					else if (strcmp(str, "exit") == 0)
 					{
 						printf("disconnection form:%s  port:%d\n", inet_ntoa(cliaddr.sin_addr), ntohs(cliaddr.sin_port));
-						close(sockfd);
+						//close(sockfd);
                         FD_CLR(sockfd,&allset);
                         LoginInfo[i].client=-1;
-						exit(0);
+						//exit(0);
 						//break;
 					}
 					else if (ser_Iscmd(str))

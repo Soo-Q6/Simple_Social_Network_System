@@ -18,8 +18,10 @@ void cli_download(const char* filename, int sockfd) {
 again:
 	while ((n = read(sockfd, recvline, MAXLINE)) == MAXLINE)
 	{
+		recvline[n]='\0';
 		fputs(recvline, stdout);
 	}
+	recvline[n]='\0';
 	if (n>1)
 	{
 		if (strcmp(recvline, "error") == 0)
