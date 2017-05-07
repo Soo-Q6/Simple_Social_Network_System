@@ -2,7 +2,17 @@
 #define CLIENT_H
 
 #define MAXLINE 1024
+#define MAX_CONNECT_NUM 10
+#define ACCOUNT_SIZE 20
+#define SA struct sockaddr
 #define max(a,b)  ((a)>(b)?(a):(b))
+
+struct Login_info {
+	int client;
+	char account[ACCOUNT_SIZE];
+	char *sin_addr;
+	int sin_port;
+};
 
 /**
 @client

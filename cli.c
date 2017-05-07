@@ -81,7 +81,7 @@ void cli_ls(int sockfd) {
 }
 
 int cli_Iscmd(char cmd[10]) {
-	if (!strcmp(cmd, "cd") || !strcmp(cmd, "mkdir") || !strcmp(cmd, "show") || !strcmp(cmd, "po"))
+	if (!strcmp(cmd, "cd") || !strcmp(cmd, "mkdir") || !strcmp(cmd, "show") || !strcmp(cmd, "po") || !strcmp(cmd,"connect"))
 		return 1;
 	else
 		return 0;

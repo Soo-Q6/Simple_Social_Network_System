@@ -14,35 +14,58 @@
 #include "cli.h"
 //#define MAXLINE 1024
 #define SERV_PORT 8888
+#define CONN_PORT 9999
 #define UDP_PORT  6000
 #define ACCOUNT_SIZE 20
 void str_cli(FILE *, int);
 int main(int argc, char **argv) {
 	setvbuf(stdout,NULL,_IONBF,0);
 	int sockfd, udpfd, maxfd, n = 1, nready, len, connfd;
+	int listenfd;
+	int connectfd[MAX_CONNECT_NUM];
 	char recvline[MAXLINE], sendline[MAXLINE];
 	char account[ACCOUNT_SIZE];
-	struct sockaddr_in servaddr;
-	fd_set rset;
+	struct sockaddr_in servaddr,connaddr;
+	fd_set rset,cset;
+	int cmax=0;
 	time_t ticks;
 	char str[10], str_name[20];
-	char *ipaddr = "127.0.0.1";
+	//char *ipaddr = "127.0.0.1";
+	if(argc!=2){
+		printf("open error\n");
+		exit(0);
+	}
 
+	/*initial the connectfd[]*/
+	int temp;
+	for(temp=0;temp<MAX_CONNECT_NUM;temp++)
+		connectfd[temp]=-1;
 
+	/*a socket for connect server*/
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		printf("socket error");
 	bzero(&servaddr, sizeof(servaddr));
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_port = htons(SERV_PORT);
-	if (inet_pton(AF_INET, ipaddr, &servaddr.sin_addr) <= 0)
-		printf("inet_ption error for %s", ipaddr);
+	if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0)
+		printf("inet_ption error for %s", argv[1]);
 	fputs("please enter your acount number:\n", stdout);
 	scanf("%s", account);
 	if ((n = connect(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr))) < 0)
 		printf("connect error");
 	write(sockfd, account, sizeof(account));
 	printf("%s login successfully!\ncmd/>", account);
-	//printf("%s/>", "cmd");
+
+
+	/*a socket for connent client*/
+	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		printf("socket error");	
+	bzero(&connaddr, sizeof(connaddr));
+	connaddr.sin_family = AF_INET;
+	connaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	connaddr.sin_port = htons(CONN_PORT);
+
+	bind(listenfd, (SA *)&connaddr, sizeof(connaddr));
 
 
 	/* for create UDP socket */
@@ -54,12 +77,12 @@ int main(int argc, char **argv) {
     bind(udpfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
 	FD_ZERO(&rset);
-	maxfd=max(udpfd,max(sockfd,fileno(stdin)));
+	maxfd=max(udpfd,max(listenfd,fileno(stdin)));
 
 	for (;;)
     {
 		FD_SET(fileno(stdin),&rset);
-		FD_SET(sockfd, &rset);
+		FD_SET(listenfd, &rset);
 		FD_SET(udpfd, &rset);
 		if ((nready = select(maxfd+1, &rset, NULL, NULL, NULL)) < 0)
 		{
@@ -69,19 +92,13 @@ int main(int argc, char **argv) {
 	    	else
 			printf("select error");
 		}
-		if (FD_ISSET(sockfd, &rset))
+		if (FD_ISSET(listenfd, &rset))
 		{
 	   	 	len = sizeof(servaddr);
-	    	connfd = accept(sockfd, (struct sockaddr *)&servaddr, &len);
-	    	//if ((childpid = fork()) == 0)
-	    	//{
-			/* child process */
-			//close(listenfd);
-			/* close listening socket */
+	    	connfd = accept(listenfd, (struct sockaddr *)&servaddr, &len);
+	    	
 			str_echo(connfd);
-			/* process the request */
-			//exit(0);
-	    	//}
+			
 	    	close(connfd);
 		}
 		if (FD_ISSET(udpfd, &rset))
@@ -115,9 +132,36 @@ int main(int argc, char **argv) {
 			}
 			else if (cli_Iscmd(str))
 			{
-				printf("this is multiple select.\n");
+				//printf("this is multiple select.\n");
 				scanf("%s", strname);
-				cli_cmd_Up(sockfd, str, strname);
+				int connected_count;
+				struct sockaddr_in tmpaddr;
+				//FD_SET(fileno(stdin),&cset);
+				if(!strcmp(str,"connect")){
+					for(connected_count=0;connected_count<MAX_CONNECT_NUM;connected_count++)
+						if(connectfd[connected_count]<0){
+							if((connectfd[connected_count]=socket(AF_INET,SOCK_STREAM,0))<0){
+								printf("socket error\n");
+								continue;
+							}
+							bzero(&tmpaddr,sizeof(tmpaddr));
+							tmpaddr.sin_family=AF_INET;
+							tmpaddr.sin_port=htons(CONN_PORT);
+							if(inet_pton(AF_INET,strname,&tmpaddr.sin_addr)<=0){
+								printf("inet_pton error for %s\n",strname);
+							}
+							if(connect(connectfd[connected_count],(SA*)&tmpaddr,sizeof(tmpaddr))<0){
+								printf("connect error\n");
+								continue;
+							}
+							maxfd=max(connectfd[connected_count],maxfd);
+							FD_SET(connectfd[connected_count],&rset);
+						}
+					write(connectfd[connected_count],sendline,sizeof(sendline));
+				}else{
+					cli_cmd_Up(sockfd, str, strname);
+				}
+				
 			}
 			else if (strcmp(str, "exit") == 0)
 			{
@@ -133,6 +177,17 @@ int main(int argc, char **argv) {
 				printf("commander wrong!\n");
 			}
 			//}
+		}
+		int j;
+		int tmpfd;
+		for(j=0;j<MAX_CONNECT_NUM;j++){
+			if((tmpfd=connectfd[j])<0){
+				continue;
+			}
+			if(FD_ISSET(tmpfd,&rset)){
+				read(tmpfd,recvline,sizeof(recvline));
+				printf("%s\n",recvline);
+			}
 		}
 		printf("%s/>", "cmd");
     }
