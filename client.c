@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/select.h>
 #include <sys/wait.h>
 #include "cli.h"
 //#define MAXLINE 1024
@@ -26,10 +27,11 @@ int main(int argc, char **argv) {
 	char recvline[MAXLINE], sendline[MAXLINE];
 	char account[ACCOUNT_SIZE];
 	struct sockaddr_in servaddr,connaddr;
-	fd_set rset,cset;
+	fd_set rset;
 	int cmax=0;
 	time_t ticks;
 	char str[10], str_name[20];
+	int on=1;
 	//char *ipaddr = "127.0.0.1";
 	if(argc!=2){
 		printf("open error\n");
@@ -60,6 +62,7 @@ int main(int argc, char **argv) {
 	/*a socket for connent client*/
 	if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		printf("socket error");	
+	setsockopt(listenfd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
 	bzero(&connaddr, sizeof(connaddr));
 	connaddr.sin_family = AF_INET;
 	connaddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -142,7 +145,7 @@ int main(int argc, char **argv) {
 						if(connectfd[connected_count]<0){
 							if((connectfd[connected_count]=socket(AF_INET,SOCK_STREAM,0))<0){
 								printf("socket error\n");
-								continue;
+								break;
 							}
 							bzero(&tmpaddr,sizeof(tmpaddr));
 							tmpaddr.sin_family=AF_INET;
@@ -152,7 +155,7 @@ int main(int argc, char **argv) {
 							}
 							if(connect(connectfd[connected_count],(SA*)&tmpaddr,sizeof(tmpaddr))<0){
 								printf("connect error\n");
-								continue;
+								break;
 							}
 							maxfd=max(connectfd[connected_count],maxfd);
 							FD_SET(connectfd[connected_count],&rset);

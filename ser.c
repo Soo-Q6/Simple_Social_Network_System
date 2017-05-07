@@ -171,9 +171,9 @@ void ser_broadcast(int sockfd, int udpfd) {
 	struct sockaddr_in addrto;
     bzero(&addrto,sizeof(struct sockaddr_in));
   	addrto.sin_family=AF_INET;
-    //addrto.sin_addr.s_addr=htonl(INADDR_BROADCAST);
+    addrto.sin_addr.s_addr=htonl(INADDR_BROADCAST);
     addrto.sin_port=htons(6000);
-	inet_pton(AF_INET, "127.0.0.1", &addrto.sin_addr);
+	//inet_pton(AF_INET, "127.0.0.1", &addrto.sin_addr);
     int nlen=sizeof(addrto);
 	printf("this is broadcasting\n");
 again:

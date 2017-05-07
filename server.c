@@ -6,6 +6,7 @@
 #include <arpa/inet.h>    //close
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
 #include "ser.h"
@@ -22,8 +23,10 @@ int main(int argc, char **argv)
 	socklen_t			clilen;
 	struct sockaddr_in	cliaddr, servaddr;
 	char path[6] = "essay";
+	int on=1;
 
 	listenfd = socket(AF_INET, SOCK_STREAM, 0);
+	setsockopt(listenfd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
 
 	bzero(&servaddr, sizeof(servaddr));
 	servaddr.sin_family = AF_INET;
@@ -36,6 +39,8 @@ int main(int argc, char **argv)
 
 	/* for create UDP socket */
     udpfd = socket(AF_INET, SOCK_DGRAM, 0);
+	int yes=1;
+	setsockopt(udpfd, SOL_SOCKET, SO_BROADCAST, &yes, sizeof(yes));
     //bzero(&servaddr, sizeof(servaddr));
     //servaddr.sin_family = AF_INET;
     //servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
