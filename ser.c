@@ -184,8 +184,9 @@ again:
 		if(sendto(udpfd, recvline, MAXLINE, 0, (struct sockaddr *)&addrto, nlen)>0){
 			printf("broadcast successfully\n");
 		}
+		return;
 	}
-	if (n>1)
+	else if (n>1)
 	{
 		if (strcmp(recvline, "error") == 0)
 		{
@@ -203,7 +204,7 @@ again:
 	else if (n <= 0)
 		printf("read error");
 	else
-		printf("Upload Complete!\n");
+		printf("That's all!\n");
 	//fclose(fp);
 	return;
 }

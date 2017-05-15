@@ -17,6 +17,7 @@
 #define SERV_PORT 8888
 #define CONN_PORT 9999
 #define UDP_PORT  6000
+#define LISTENQ	  1024
 #define ACCOUNT_SIZE 20
 void str_cli(FILE *, int);
 int main(int argc, char **argv) {
@@ -53,8 +54,10 @@ int main(int argc, char **argv) {
 		printf("inet_ption error for %s", argv[1]);
 	fputs("please enter your acount number:\n", stdout);
 	scanf("%s", account);
-	if ((n = connect(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr))) < 0)
+	if ((n = connect(sockfd, (struct sockaddr *) &servaddr, sizeof(servaddr))) < 0){
 		printf("connect error");
+		exit(0);
+	}
 	write(sockfd, account, sizeof(account));
 	printf("%s login successfully!\ncmd/>", account);
 
@@ -69,6 +72,7 @@ int main(int argc, char **argv) {
 	connaddr.sin_port = htons(CONN_PORT);
 
 	bind(listenfd, (SA *)&connaddr, sizeof(connaddr));
+	listen(listenfd,LISTENQ);
 
 
 	/* for create UDP socket */
@@ -79,14 +83,15 @@ int main(int argc, char **argv) {
     servaddr.sin_port = htons(UDP_PORT);
     bind(udpfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
-	FD_ZERO(&rset);
-	maxfd=max(udpfd,max(listenfd,fileno(stdin)));
+	//FD_ZERO(&rset);
 
 	for (;;)
     {
+		FD_ZERO(&rset);
 		FD_SET(fileno(stdin),&rset);
 		FD_SET(listenfd, &rset);
 		FD_SET(udpfd, &rset);
+		maxfd=max(udpfd,max(listenfd,fileno(stdin)));
 		if ((nready = select(maxfd+1, &rset, NULL, NULL, NULL)) < 0)
 		{
 	    	if (errno == EINTR)
@@ -99,8 +104,12 @@ int main(int argc, char **argv) {
 		{
 	   	 	len = sizeof(servaddr);
 	    	connfd = accept(listenfd, (struct sockaddr *)&servaddr, &len);
-	    	
-			str_echo(connfd);
+			if(connfd<0){
+				break;
+			}
+			printf("connection from :%s  %d",inet_ntoa(servaddr.sin_addr),ntohs(servaddr.sin_port));
+	    	cli_connect(connfd);
+			//str_echo(connfd);
 			
 	    	close(connfd);
 		}
@@ -121,16 +130,16 @@ int main(int argc, char **argv) {
 			char str[10];
 			char strname[20];
 			scanf("%s", str);
-        	printf("%s str\n",str);
+        	//printf("%s str\n",str);
 			send(sockfd, str, 10, 0);           //传指令 done.
 			if (strcmp(str, "ls") == 0)
 			{
-				printf("this is ls\n");
+				//printf("this is ls\n");
 				cli_ls(sockfd);
 			}
 			else if(strcmp(str,"broadcast")==0)
 			{
-				printf("this is broadcast\n");
+				//printf("this is broadcast\n");
 				cli_upload(sockfd);
 			}
 			else if (cli_Iscmd(str))
@@ -145,7 +154,7 @@ int main(int argc, char **argv) {
 						if(connectfd[connected_count]<0){
 							if((connectfd[connected_count]=socket(AF_INET,SOCK_STREAM,0))<0){
 								printf("socket error\n");
-								break;
+								continue;
 							}
 							bzero(&tmpaddr,sizeof(tmpaddr));
 							tmpaddr.sin_family=AF_INET;
@@ -155,12 +164,14 @@ int main(int argc, char **argv) {
 							}
 							if(connect(connectfd[connected_count],(SA*)&tmpaddr,sizeof(tmpaddr))<0){
 								printf("connect error\n");
-								break;
+								continue;
 							}
 							maxfd=max(connectfd[connected_count],maxfd);
 							FD_SET(connectfd[connected_count],&rset);
+							cli_connect(connectfd[connected_count]);
 						}
-					write(connectfd[connected_count],sendline,sizeof(sendline));
+					// write(connectfd[connected_count],sendline,sizeof(sendline));
+					// break;
 				}else{
 					cli_cmd_Up(sockfd, str, strname);
 				}

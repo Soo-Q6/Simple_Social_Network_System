@@ -48,5 +48,7 @@ show the on-line user
 */
 void cli_list(int sockfd);
 void str_echo(int sockfd);
+void cli_connect(int confd);
+void cli_connected(int confd);
 #endif // !CLIENT_H
 

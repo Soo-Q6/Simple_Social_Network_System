@@ -52,8 +52,10 @@ void cli_upload(int sockfd) {
 	printf("inputing:\n");
 	n=fread(buf,1,MAXLINE,stdin);
 	buf[n]='\0';
-	printf("%s\n",buf);
-	write(sockfd, buf, strlen(buf));	
+	//printf("%s\n",buf);
+	if(!strcmp(buf,"exit")){
+		write(sockfd, buf, strlen(buf));
+	}	
 	return;
 }
 
@@ -151,4 +153,34 @@ again:
 		goto again;
 	else if (n < 0)
 		printf("str_echo:read error");
+}
+
+void cli_connect(int confd){
+	char readline[MAXLINE];
+	fd_set tmpset;
+	int maxfd1;
+	FD_ZERO(&tmpset);
+	maxfd1=max(confd,fileno(stdin));
+	while(1){
+		FD_SET(confd,&tmpset);
+		FD_SET(fileno(stdin),&tmpset);
+		if(select(maxfd1+1,&tmpset,NULL,NULL,NULL)<0){
+			if(errno==EINTR){
+				continue;
+			}
+			else {
+				printf("select error\n");
+			}
+		}
+		if(FD_ISSET(confd,&tmpset)){
+			printf("c: ");
+			int n;
+			n=read(confd,readline,sizeof(readline));
+			readline[n]='\0';
+			printf("%s\n",readline);
+		}
+		if(FD_ISSET(fileno(stdin),&tmpset)){
+			cli_upload(confd);
+		}
+	}
 }
